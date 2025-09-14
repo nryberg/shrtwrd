@@ -87,9 +87,11 @@ update_caddyfile() {
         exit 1
     fi
 
-    # Create a temporary Caddyfile with updated email
-    sed "s/your-email@example.com/$EMAIL/g" Caddyfile > Caddyfile.deploy
-    print_success "Caddyfile updated with email: $EMAIL"
+    # Create a temporary Caddyfile with updated email and domain
+    sed -e "s/your-email@example.com/$EMAIL/g" \
+        -e "s/yourdomain.com/$DOMAIN/g" \
+        Caddyfile > Caddyfile.deploy
+    print_success "Caddyfile updated with email: $EMAIL and domain: $DOMAIN"
 }
 
 # Package project for deployment

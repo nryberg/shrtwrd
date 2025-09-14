@@ -14,7 +14,7 @@
 }
 
 # shrtwrd.com and its subdomains - Go application
-shrtwrd.com, one.shrtwrd.com, two.shrtwrd.com, three.shrtwrd.com, four.shrtwrd.com, five.shrtwrd.com, six.shrtwrd.com {
+yourdomain.com, one.yourdomain.com, two.yourdomain.com, three.yourdomain.com, four.yourdomain.com, five.yourdomain.com, six.yourdomain.com {
     # Reverse proxy to shrtwrd Go application
     reverse_proxy shrtwrd:8080
 
@@ -90,6 +90,6 @@ shrtwrd.com, one.shrtwrd.com, two.shrtwrd.com, three.shrtwrd.com, four.shrtwrd.c
 # }
 
 # Redirect www to non-www (if desired)
-# www.shrtwrd.com {
-#     redir https://shrtwrd.com{uri}
+# www.yourdomain.com {
+#     redir https://yourdomain.com{uri}
 # }
