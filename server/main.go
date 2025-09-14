@@ -15,7 +15,18 @@ import (
 var words []string
 
 func loadWords() {
-	file, err := os.Open("../words.txt")
+	// Try multiple possible locations for words.txt
+	possiblePaths := []string{"words.txt", "../words.txt", "../../words.txt"}
+	var file *os.File
+	var err error
+
+	for _, path := range possiblePaths {
+		file, err = os.Open(path)
+		if err == nil {
+			break
+		}
+	}
+
 	if err != nil {
 		log.Fatalf("Error opening words.txt: %v", err)
 	}
@@ -72,6 +83,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			wordsPerLine = 4
 		case "five":
 			wordsPerLine = 5
+		case "six":
+			wordsPerLine = 6
 		}
 	}
 
@@ -98,7 +111,12 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 	loadWords()
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "80"
+	}
+
 	http.HandleFunc("/", handler)
-	log.Println("Starting server on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Printf("Starting server on :%s", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

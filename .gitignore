@@ -24,10 +24,42 @@ profile.cov
 go.work
 go.work.sum
 
-# env file
+# Environment files
 .env
+.env.local
+.env.production
+
+# Deployment artifacts
+*.tar.gz
+shrtwrd-platform.tar.gz
+
+# SSH keys
+*.pem
+*.key
+id_rsa*
+
+# Backup files
+*.bak
+Caddyfile.bak
+
+# Logs
+*.log
+logs/
 
 # Editor/IDE
 # .idea/
 # .vscode/
 .DS_Store
+
+# Sensitive deployment scripts (if they contain hardcoded values)
+deploy-multi.sh
+Caddyfile
+manage.sh
+
+# Temporary - until we template these files
+
+# OS generated files
+Thumbs.db
+*.swp
+*.swo
+*~

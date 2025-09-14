@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Our Multi-Service Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .service-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .service-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .service-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .service-description {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .service-url {
+            font-family: 'Courier New', monospace;
+            background: #f5f5f5;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #007acc;
+        }
+
+        .features {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+            color: white;
+        }
+
+        .features h2 {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .features-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .feature-item::before {
+            content: "✓";
+            background: #4CAF50;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 3rem;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .service-card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Multi-Service Platform</h1>
+            <p class="subtitle">Powered by Docker Compose & Caddy</p>
+        </header>
+
+        <div class="services-grid">
+            <a href="https://shrtwrd.com" class="service-card">
+                <span class="service-icon">🔤</span>
+                <h3 class="service-title">ShrtWrd Generator</h3>
+                <p class="service-description">
+                    Generate short word combinations for passwords, usernames, or memorable phrases.
+                    Supports 1-5 words with subdomain-based configuration.
+                </p>
+                <div class="service-url">shrtwrd.com</div>
+            </a>
+
+            <div class="service-card" style="opacity: 0.7; cursor: default;">
+                <span class="service-icon">📊</span>
+                <h3 class="service-title">Analytics Dashboard</h3>
+                <p class="service-description">
+                    Monitor your services with real-time analytics and performance metrics.
+                    (Coming Soon)
+                </p>
+                <div class="service-url">analytics.yourdomain.com</div>
+            </div>
+
+            <div class="service-card" style="opacity: 0.7; cursor: default;">
+                <span class="service-icon">🔧</span>
+                <h3 class="service-title">API Gateway</h3>
+                <p class="service-description">
+                    Centralized API management with rate limiting, authentication, and monitoring.
+                    (Coming Soon)
+                </p>
+                <div class="service-url">api.yourdomain.com</div>
+            </div>
+        </div>
+
+        <div class="features">
+            <h2>Platform Features</h2>
+            <div class="features-list">
+                <div class="feature-item">Automatic HTTPS with Let's Encrypt</div>
+                <div class="feature-item">Docker Compose orchestration</div>
+                <div class="feature-item">Caddy reverse proxy</div>
+                <div class="feature-item">High availability & auto-restart</div>
+                <div class="feature-item">Centralized logging</div>
+                <div class="feature-item">Security headers</div>
+                <div class="feature-item">Gzip compression</div>
+                <div class="feature-item">Static file caching</div>
+            </div>
+        </div>
+
+        <footer>
+            <p>🌐 Deployed on DigitalOcean | 📦 Containerized with Docker</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+                Server IP: 167.172.193.225 | Powered by Caddy & Go
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

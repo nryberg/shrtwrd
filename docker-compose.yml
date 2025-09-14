@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # Caddy reverse proxy and static file server
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./static-sites:/srv/static
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - web
+    environment:
+      - CADDY_INGRESS_NETWORKS=web
+
+  # shrtwrd Go application
+  shrtwrd:
+    build: ./server
+    container_name: shrtwrd-server
+    restart: unless-stopped
+    environment:
+      - PORT=8080
+    expose:
+      - "8080"
+    networks:
+      - web
+    depends_on:
+      - caddy
+
+  # Example: Additional service (commented out)
+  # another-app:
+  #   image: nginx:alpine
+  #   container_name: another-app
+  #   restart: unless-stopped
+  #   expose:
+  #     - "80"
+  #   networks:
+  #     - web
+  #   volumes:
+  #     - ./another-app:/usr/share/nginx/html
+
+networks:
+  web:
+    driver: bridge
+
+volumes:
+  caddy_data:
+    external: true
+  caddy_config:
