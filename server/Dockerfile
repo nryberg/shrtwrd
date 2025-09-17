@@ -35,6 +35,9 @@ WORKDIR /home/appuser/
 COPY --from=builder /app/shrtwrd-server .
 COPY --from=builder /app/words.txt .
 
+# Create data directory for persistent storage
+RUN mkdir -p /home/appuser/data
+
 # Change ownership to the non-root user
 RUN chown -R appuser:appuser /home/appuser/
 

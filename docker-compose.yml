@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # Caddy reverse proxy and static file server
@@ -28,6 +28,8 @@ services:
       - PORT=8080
     expose:
       - "8080"
+    volumes:
+      - shrtwrd_data:/home/appuser/data
     networks:
       - web
     depends_on:
@@ -53,3 +55,4 @@ volumes:
   caddy_data:
     external: true
   caddy_config:
+  shrtwrd_data:
