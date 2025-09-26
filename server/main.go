@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,6 +18,7 @@ import (
 )
 
 var words []string
+var syllableLookup map[string]int
 var counterMutex sync.Mutex
 
 const counterFile = "data/word_counter.txt"
@@ -47,6 +49,56 @@ func loadWords() {
 	if err := scanner.Err(); err != nil {
 		log.Fatalf("Error reading words.txt: %v", err)
 	}
+}
+
+func loadSyllables() {
+	syllableLookup = make(map[string]int)
+
+	// Try multiple possible locations for syllables.txt
+	possiblePaths := []string{
+		"utils/syllables.txt",
+		"../utils/syllables.txt",
+		"../../utils/syllables.txt",
+		"syllables.txt",
+	}
+	var file *os.File
+	var err error
+
+	for _, path := range possiblePaths {
+		file, err = os.Open(path)
+		if err == nil {
+			log.Printf("Loading syllables from: %s", path)
+			break
+		}
+	}
+
+	if err != nil {
+		log.Printf("Warning: Could not load syllables.txt, using fallback method: %v", err)
+		return
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+
+		parts := strings.Split(line, ":")
+		if len(parts) == 2 {
+			word := parts[0]
+			if count, err := strconv.Atoi(parts[1]); err == nil {
+				syllableLookup[word] = count
+			}
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Printf("Warning: Error reading syllables.txt: %v", err)
+	}
+
+	log.Printf("Loaded %d syllable entries", len(syllableLookup))
 }
 
 func readCounter() int {
@@ -162,6 +214,174 @@ func formatCSV(wordLines [][]string) (string, error) {
 	return result.String(), nil
 }
 
+func countSyllables(word string) int {
+	if word == "" {
+		return 0
+	}
+
+	// First try the lookup table
+	if count, exists := syllableLookup[word]; exists {
+		return count
+	}
+
+	word = strings.ToLower(word)
+
+	// Count vowel groups (consecutive vowels count as one syllable)
+	vowelPattern := regexp.MustCompile(`[aeiouy]+`)
+	vowelGroups := vowelPattern.FindAllString(word, -1)
+	syllables := len(vowelGroups)
+
+	// Handle silent 'e' at the end
+	if strings.HasSuffix(word, "e") && syllables > 1 {
+		syllables--
+	}
+
+	// Handle special cases where 'y' might not be a vowel
+	if strings.HasSuffix(word, "ly") && syllables > 1 {
+		syllables--
+	}
+
+	// Every word has at least 1 syllable
+	if syllables < 1 {
+		syllables = 1
+	}
+
+	return syllables
+}
+
+func generateHaikuLine(targetSyllables int, maxAttempts int) []string {
+	var line []string
+	currentSyllables := 0
+	attempts := 0
+
+	for currentSyllables < targetSyllables && attempts < maxAttempts {
+		// Calculate remaining syllables needed
+		remaining := targetSyllables - currentSyllables
+
+		// Try to find a word that fits
+		wordAttempts := 0
+		maxWordAttempts := 100
+
+		for wordAttempts < maxWordAttempts {
+			word := words[rand.Intn(len(words))]
+			wordSyllables := countSyllables(word)
+
+			// Accept the word if it fits exactly or if it's the last word and fits
+			if wordSyllables == remaining || (wordSyllables <= remaining && wordSyllables > 0) {
+				line = append(line, word)
+				currentSyllables += wordSyllables
+				break
+			}
+			wordAttempts++
+		}
+
+		// If we can't find a fitting word, break to avoid infinite loop
+		if wordAttempts >= maxWordAttempts {
+			break
+		}
+
+		attempts++
+	}
+
+	return line
+}
+
+func generateHaiku() [][]string {
+	maxAttempts := 1000
+
+	// Generate each line with target syllable counts
+	firstLine := generateHaikuLine(5, maxAttempts)
+	secondLine := generateHaikuLine(7, maxAttempts)
+	thirdLine := generateHaikuLine(5, maxAttempts)
+
+	return [][]string{firstLine, secondLine, thirdLine}
+}
+
+func formatHaikuPlainText(haikuLines [][]string) string {
+	var result strings.Builder
+	for i, line := range haikuLines {
+		result.WriteString(strings.Join(line, " "))
+		if i < len(haikuLines)-1 {
+			result.WriteString("\n")
+		}
+	}
+
+	// Add two blank lines and about/stats links
+	result.WriteString("\n\nAbout: https://shrtwrd.com/about | Stats: https://shrtwrd.com/stats")
+
+	return result.String()
+}
+
+type HaikuResponse struct {
+	Lines [][]string `json:"lines"`
+	Stats struct {
+		FirstLineSyllables  int    `json:"first_line_syllables"`
+		SecondLineSyllables int    `json:"second_line_syllables"`
+		ThirdLineSyllables  int    `json:"third_line_syllables"`
+		Pattern             string `json:"pattern"`
+	} `json:"stats"`
+}
+
+func formatHaikuJSON(haikuLines [][]string) ([]byte, error) {
+	response := HaikuResponse{
+		Lines: haikuLines,
+	}
+
+	// Calculate actual syllable counts
+	if len(haikuLines) >= 3 {
+		response.Stats.FirstLineSyllables = 0
+		for _, word := range haikuLines[0] {
+			response.Stats.FirstLineSyllables += countSyllables(word)
+		}
+
+		response.Stats.SecondLineSyllables = 0
+		for _, word := range haikuLines[1] {
+			response.Stats.SecondLineSyllables += countSyllables(word)
+		}
+
+		response.Stats.ThirdLineSyllables = 0
+		for _, word := range haikuLines[2] {
+			response.Stats.ThirdLineSyllables += countSyllables(word)
+		}
+
+		response.Stats.Pattern = fmt.Sprintf("%d-%d-%d",
+			response.Stats.FirstLineSyllables,
+			response.Stats.SecondLineSyllables,
+			response.Stats.ThirdLineSyllables)
+	}
+
+	return json.MarshalIndent(response, "", "  ")
+}
+
+func formatHaikuCSV(haikuLines [][]string) (string, error) {
+	var result strings.Builder
+	writer := csv.NewWriter(&result)
+
+	// Write header
+	writer.Write([]string{"line_number", "words", "syllable_count"})
+
+	// Write data rows
+	for i, line := range haikuLines {
+		syllableCount := 0
+		for _, word := range line {
+			syllableCount += countSyllables(word)
+		}
+
+		writer.Write([]string{
+			fmt.Sprintf("%d", i+1),
+			strings.Join(line, " "),
+			fmt.Sprintf("%d", syllableCount),
+		})
+	}
+
+	writer.Flush()
+	if err := writer.Error(); err != nil {
+		return "", err
+	}
+
+	return result.String(), nil
+}
+
 func aboutHandler(w http.ResponseWriter, r *http.Request) {
 	aboutText := `Random Word Generator
 
@@ -200,10 +420,18 @@ Examples:
 
 You can generate between 1 and 100 lines per request. Words are randomly selected and output in your preferred format.
 
+Haiku Generator:
+- https://shrtwrd.com/haiku → Generate a random word haiku (5-7-5 syllable pattern)
+- https://shrtwrd.com/haiku?format=json → JSON haiku with syllable analysis
+- https://shrtwrd.com/haiku?format=csv → CSV format with syllable counts per line
+
+The haiku generator creates three-line poems using random words arranged in the traditional 5-7-5 syllable pattern.
+
 Statistics:
 - https://shrtwrd.com/stats → view total words served
 - https://shrtwrd.com/stats?format=json → JSON API with word count and timestamp
-- https://shrtwrd.com/stats?format=csv → CSV download with statistics
+- https://shrtwrd.com/stats?format=csv → CSV download with current statistics
+- https://shrtwrd.com/stats.csv → download historical stats CSV file
 
 Perfect for generating unique names, creative inspiration, or random text for testing purposes.`
 
@@ -279,6 +507,95 @@ About: https://shrtwrd.com/about`, currentCount)
 	fmt.Fprint(w, statsText)
 }
 
+func downloadStatsCSV(w http.ResponseWriter, r *http.Request) {
+	// Try multiple possible locations for the stats CSV file
+	possiblePaths := []string{
+		"utils/stats.csv",
+		"../utils/stats.csv",
+		"../../utils/stats.csv",
+		"stats.csv",
+	}
+
+	var csvData []byte
+	var err error
+	var foundPath string
+
+	for _, path := range possiblePaths {
+		csvData, err = ioutil.ReadFile(path)
+		if err == nil {
+			foundPath = path
+			break
+		}
+	}
+
+	if err != nil {
+		// If no historical file exists, create a basic CSV with current stats
+		counterMutex.Lock()
+		currentCount := readCounter()
+		counterMutex.Unlock()
+
+		timestamp := time.Now()
+		csvContent := fmt.Sprintf("timestamp,total_words_served,fetch_time\n%s,%d,%s\n",
+			timestamp.Format(time.RFC3339), currentCount, timestamp.Format(time.RFC3339))
+
+		w.Header().Set("Content-Type", "text/csv")
+		w.Header().Set("Content-Disposition", "attachment; filename=\"stats.csv\"")
+		fmt.Fprint(w, csvContent)
+		return
+	}
+
+	// Serve the existing CSV file
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", "attachment; filename=\"stats.csv\"")
+	w.Write(csvData)
+
+	log.Printf("Served stats CSV from: %s", foundPath)
+}
+
+func haikuHandler(w http.ResponseWriter, r *http.Request) {
+	// Get format parameter
+	format := r.URL.Query().Get("format")
+	if format == "" {
+		format = "text" // default
+	}
+
+	// Generate haiku
+	haikuLines := generateHaiku()
+
+	// Count total words generated and update counter
+	totalWords := 0
+	for _, line := range haikuLines {
+		totalWords += len(line)
+	}
+	updateCounter(totalWords)
+
+	// Format output based on requested format
+	switch format {
+	case "json":
+		w.Header().Set("Content-Type", "application/json")
+		jsonData, err := formatHaikuJSON(haikuLines)
+		if err != nil {
+			http.Error(w, "Error formatting JSON", http.StatusInternalServerError)
+			return
+		}
+		w.Write(jsonData)
+
+	case "csv":
+		w.Header().Set("Content-Type", "text/csv")
+		w.Header().Set("Content-Disposition", "attachment; filename=\"haiku.csv\"")
+		csvData, err := formatHaikuCSV(haikuLines)
+		if err != nil {
+			http.Error(w, "Error formatting CSV", http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprint(w, csvData)
+
+	default: // "text" or anything else defaults to plain text
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		fmt.Fprint(w, formatHaikuPlainText(haikuLines))
+	}
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	numLines := 1
 	wordsPerLine := 3 // Default
@@ -312,6 +629,18 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	// Handle stats page
 	if path == "stats" {
 		statsHandler(w, r)
+		return
+	}
+
+	// Handle stats CSV download
+	if path == "stats.csv" || path == "download/stats.csv" {
+		downloadStatsCSV(w, r)
+		return
+	}
+
+	// Handle haiku generation
+	if path == "haiku" {
+		haikuHandler(w, r)
 		return
 	}
 
@@ -368,6 +697,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	loadWords()
+	loadSyllables()
 
 	port := os.Getenv("PORT")
 	if port == "" {
