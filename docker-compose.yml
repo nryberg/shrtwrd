@@ -29,7 +29,8 @@ services:
     expose:
       - "8080"
     volumes:
-      - shrtwrd_data:/home/appuser/data
+      - shrtwrd_data:/app/data
+      - ./utils:/app/utils
     networks:
       - web
     depends_on:

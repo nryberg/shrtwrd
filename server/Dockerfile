@@ -16,6 +16,9 @@ COPY main.go ./
 # Copy the words.txt file (should be in the same directory now)
 COPY words.txt ./
 
+# Copy the utils directory for syllables lookup
+COPY ../utils ./utils
+
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o shrtwrd-server .
 
@@ -28,18 +31,19 @@ RUN apk --no-cache add ca-certificates wget
 # Create a non-root user
 RUN adduser -D -s /bin/sh appuser
 
-# Set the working directory
-WORKDIR /home/appuser/
+# Set the working directory to match volume mount
+WORKDIR /app
 
 # Copy the binary and words file from the builder stage
 COPY --from=builder /app/shrtwrd-server .
 COPY --from=builder /app/words.txt .
+COPY --from=builder /app/utils ./utils
 
 # Create data directory for persistent storage
-RUN mkdir -p /home/appuser/data
+RUN mkdir -p /app/data
 
 # Change ownership to the non-root user
-RUN chown -R appuser:appuser /home/appuser/
+RUN chown -R appuser:appuser /app
 
 # Switch to non-root user
 USER appuser
