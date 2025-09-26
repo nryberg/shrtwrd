@@ -521,10 +521,14 @@ func downloadStatsCSV(w http.ResponseWriter, r *http.Request) {
 	var foundPath string
 
 	for _, path := range possiblePaths {
+		log.Printf("Trying to read stats CSV from: %s", path)
 		csvData, err = ioutil.ReadFile(path)
 		if err == nil {
 			foundPath = path
+			log.Printf("Successfully found stats CSV at: %s", path)
 			break
+		} else {
+			log.Printf("Failed to read %s: %v", path, err)
 		}
 	}
 

@@ -13,6 +13,9 @@ STATS_DIR="utils"
 STATS_FILE="$STATS_DIR/stats.csv"
 LOG_FILE="/var/log/shrtwrd_stats.log"
 
+# Get absolute path for better debugging
+ABSOLUTE_STATS_FILE="$(pwd)/$STATS_FILE"
+
 # Create utils directory if it doesn't exist
 mkdir -p "$STATS_DIR"
 
@@ -28,6 +31,8 @@ handle_error() {
 }
 
 log_message "Starting stats collection from $API_URL"
+log_message "Working directory: $(pwd)"
+log_message "Stats file will be saved to: $ABSOLUTE_STATS_FILE"
 
 # Fetch stats from API with timeout
 if ! STATS_JSON=$(curl -s --max-time 30 --fail "$API_URL" 2>/dev/null); then
@@ -82,7 +87,10 @@ if [ ${PIPESTATUS[0]} -eq 0 ]; then
     # Show current stats file size for monitoring
     if [ -f "$STATS_FILE" ]; then
         LINES=$(wc -l < "$STATS_FILE")
+        SIZE=$(ls -la "$STATS_FILE")
         log_message "Stats file now contains $LINES lines"
+        log_message "File details: $SIZE"
+        log_message "File permissions: $(ls -la $STATS_FILE | cut -d' ' -f1,3,4)"
     fi
 else
     handle_error "Failed to process and save stats"
