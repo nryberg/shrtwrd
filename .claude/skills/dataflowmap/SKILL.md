@@ -92,7 +92,7 @@ O  orders
 X  cast order_date as date
 +  customers
 ^  region, amount
-^  order_date >= 2025-01-01
+v  order_date >= 2025-01-01
 ]  region
 #  SUM(amount)
 \  total DESC
@@ -116,9 +116,8 @@ result.to_csv('monthly_revenue.csv')
 O  orders.csv
 X  cast order_date to datetime
 +  customers
+v  order_date >= 2025-01-01
 ^  region, amount
-^  order_date >= 2025-01-01
-V  region, amount
 ]  region
 #  SUM(amount)
 \  amount DESC
