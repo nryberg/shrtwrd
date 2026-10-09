@@ -70,7 +70,7 @@ WITH x AS (
   FROM qb_seasons WINDOW w AS (PARTITION BY player_id ORDER BY season)
 )
 SELECT player_id, player_name, prev_season, prev_team, season, primary_team AS new_team,
-       teams AS new_season_teams, starts AS new_team_starts, qb_snaps, pass_att, pass_yds, pass_td, ints
+       teams AS new_season_teams, starts AS season_starts, qb_snaps, pass_att, pass_yds, pass_td, ints
 FROM x
 WHERE prev_team IS NOT NULL AND prev_team <> primary_team;
 
